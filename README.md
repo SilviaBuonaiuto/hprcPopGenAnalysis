@@ -97,8 +97,15 @@ bcftools view -R chr$c.$ass.pArm_coord.txt -O z -o hprc-mc.$ass.chr$c.SNPs.pArm.
 done; done
 ```
 #### 9. Extract variants on q arm
+```
+for ass in chm13 hg38; do for c in $(seq 1 22); do
+bcftools view -R chr$c.$ass.qArm_coord.txt -O z -o hprc-pggb.$ass.chr$c.SNPs.qArm.vcf.gz hprc-pggb.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-pggb.$ass.chr$c.SNPs.qArm.vcf.gz;
+done; done
 
-
+for ass in chm13 hg38; do for c in $(seq 1 22); do
+bcftools view -R chr$c.$ass.qArm_coord.txt -O z -o hprc-mc.$ass.chr$c.SNPs.qArm.vcf.gz hprc-mc.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-mc.$ass.chr$c.SNPs.qArm.vcf.gz;
+done; done
+```
 #### 10. PCA using variants on p and q arms
 
 #### 11. Cluster analysis
