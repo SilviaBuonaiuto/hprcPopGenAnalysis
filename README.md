@@ -15,7 +15,6 @@ wget
 
 #### 1. Remove prefix from chromosome names
 ```
-
 bcftools annotate --rename-chrs hg38.chrNames.txt -O z -o hprc-pggb.grch38.vcf.gz hprc-v1.0-pggb.grch38.1-22+X.vcf.gz
 
 bcftools annotate --rename-chrs chm13.chrNames.txt -O z -o hprc-pggb.chm13.vcf.gz hprc-v1.0-pggb.chm13.1-22+X.vcf.gz
@@ -23,7 +22,6 @@ bcftools annotate --rename-chrs chm13.chrNames.txt -O z -o hprc-pggb.chm13.vcf.g
 bcftools annotate --rename-chrs hg38.chrNames.txt -O z -o hprc-mc.grch38.vcf.gz hprc-v1.0-mc-grch38.vcf.gz
 
 bcftools annotate --rename-chrs chm13.chrNames.txt -O z -o hprc-mc.chm13.vcf.gz hprc-v1.0-mc-chm13.vcf.gz
-
 ```
 
 #### 2. Extract single chromosome from vcf
