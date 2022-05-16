@@ -111,6 +111,7 @@ done; done
 #### 11. Cluster analysis
 ```
 Rscript scr/clusterAnalysis.R pathToImputFiles length assembly method pathToOutputFile
+Rscript scr/plotClustersHprc.R pathToImputFiles pathToPlot
 ```
 
 #### 12. PCA plot
