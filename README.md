@@ -8,9 +8,17 @@
 
 #### 0. Download vcfs
 ```
+wget tps://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.chm13.1-22+X.vcf.gz
+wget tps://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.chm13.1-22+X.vcf.gz.tbi
 
-wget 
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.grch38.1-22+X.vcf.gz
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.grch38.1-22+X.vcf.gz.tbi
 
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-chm13.vcf.gz
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-chm13.vcf.gz.tbi
+
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-grch38.vcf.gz
+wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-grch38.vcf.gz.tbi
 ```
 
 #### 1. Remove prefix from chromosome names
