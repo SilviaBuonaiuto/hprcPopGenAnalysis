@@ -109,5 +109,8 @@ done; done
 #### 10. PCA using variants on p and q arms
 
 #### 11. Cluster analysis
+```
+Rscript scr/clusterAnalysis.R pathToImputFiles length assembly method pathToOutputFile
+```
 
 #### 12. PCA plot
