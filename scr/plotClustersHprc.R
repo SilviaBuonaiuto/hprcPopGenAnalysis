@@ -4,7 +4,7 @@ library(bracer)
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args)==0) {
- stop('specify five arguments: <filePath> <length> <assembly> <method> <outputFile> ', call.=FALSE)
+ stop('specify five arguments: <filePath> <pathToPlot> ', call.=FALSE)
 }
 
 allClusters = data.frame()
