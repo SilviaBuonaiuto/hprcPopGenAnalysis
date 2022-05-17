@@ -126,4 +126,5 @@ Rscript scr/plotClustersHprc.R pathToImputFiles pathToPlot
 ```
 ## put together eigenvec files
 python3 scr/appendEigenvec.py -i "pathToImputFiles" -met method -ass assembly -len lehgth -o pathToOutputFile
+Rscript scr/PCA_plot.R "pathToImputFiles" met pathToOtputPlot
 ```
