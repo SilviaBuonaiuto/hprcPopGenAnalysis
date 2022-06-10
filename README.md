@@ -8,121 +8,61 @@
 
 #### 0. Download vcfs
 ```
-wget tps://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.chm13.1-22+X.vcf.gz
-wget tps://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.chm13.1-22+X.vcf.gz.tbi
+for c in $(seq 1 22); do wget http://hypervolu.me/~guarracino/HPRC/wgg.88_confident_variants_APR_08_2022/chr1.pan.fa.a2fb268.4030258.6a1ecc2.smooth.reliable.vcf.gz* ; done
 
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.grch38.1-22+X.vcf.gz
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/pggb/vcfs/hprc-v1.0-pggb.grch38.1-22+X.vcf.gz.tbi
-
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-chm13.vcf.gz
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-chm13.vcf.gz.tbi
-
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-grch38.vcf.gz
-wget https://s3-us-west-2.amazonaws.com/human-pangenomics/index.html?prefix=pangenomes/freeze/freeze1/minigraph-cactus/hprc-v1.0-mc-grch38.vcf.gz.tbi
 ```
 
 #### 1. Remove prefix from chromosome names
 ```
-bcftools annotate --rename-chrs hg38.chrNames.txt -O z -o hprc-pggb.grch38.vcf.gz hprc-v1.0-pggb.grch38.1-22+X.vcf.gz
-
-bcftools annotate --rename-chrs chm13.chrNames.txt -O z -o hprc-pggb.chm13.vcf.gz hprc-v1.0-pggb.chm13.1-22+X.vcf.gz
-
-bcftools annotate --rename-chrs hg38.chrNames.txt -O z -o hprc-mc.grch38.vcf.gz hprc-v1.0-mc-grch38.vcf.gz
-
-bcftools annotate --rename-chrs chm13.chrNames.txt -O z -o hprc-mc.chm13.vcf.gz hprc-v1.0-mc-chm13.vcf.gz
+for c in $(seq 1 22); do bcftools annotate --rename-chrs chr$c.hg38.chrNames.txt -O z -o chr$c.confident.vcf.gz chr$c.pan.fa.a2fb268.4030258.6a1ecc2.smooth.reliable.vcf.gz; done
 ```
 
-#### 2. Extract single chromosome from vcf
+#### 2. Normalize
 ```
-for ass in chm13 hg38; do for c in $(seq 1 22); do 
-bcftools view -O z -o hprc-pggb.$ass.chr$c.vcf.gz -r chr$c hprc-pggb.$ass.vcf.gz
-
-bcftools view -O z -o hprc-mc.$ass.chr$c.vcf.gz -r chr$c hprc-mc.$ass.vcf.gz ;
-done;done
-
+for c in $(seq 1 22); do
+vt normalize -n -r chm13.v1.0.fasta chr$c.confident.vcf.gz > chr$c.confident.norm.vcf | bgzip chr$c.confident.norm.vcf | tabix -p vcf chr$c.confident.norm.vcf.gz ; done
 ```
 
-#### 3. Normalize
+#### 3. Decompose
 ```
-for met in pggb mc; do for c in $(seq 1 22); do
-vt normalize -n -r chm13.v1.0.fasta hprc-$met.grch38.chr$c.vcf.gz > hprc-$met.grch38.chr$c.norm.vcf | bgzip hprc-$met.grch38.chr$c.norm.vcf | tabix -p vcf hprc-$met.grch38.chr$c.norm.vcf.gz ;
-done; done
-
-for met in pggb mc; do for c in $(seq 1 22); do
-vt normalize -n -r GCA_000001405.15_GRCh38_no_alt_analysis_set.fna hprc-$met.chm13.chr$c.vcf.gz > hprc-$met.chm13.chr$c.norm.vcf | bgzip hprc-$met.chm13.chr$c.norm.vcf | tabix -p vcf hprc-$met.chm13.chr$c.norm.vcf.gz ;
-done; done
+for c in $(seq 1 22); do
+vt decompose chr$c.confident.norm.vcf.gz > chr$c.confident.deco.vcf | bgzip chr$c.confident.deco.vcf | tabix -p vcf chr$c.confident.deco.vcf.gz ; done
 ```
 
-#### 4. Decompose
+#### 4. Extract SNPs only
+```
+for c in $(seq 1 22); do
+bcftools view -i 'STRLEN(REF)<=2 & STRLEN(ALT)<=2' -O z -o chr$c.confident.SNPs.vcf.gz chr$c.confident.deco.vcf.gz | tabix -p vcf chr$c.confident.SNPs.vcf.gz ; done
+```
+#### 5. Remove reference from samples
+```
+for c in $(seq 1 22); do
+vcftools --gzvcf chr$c.confident.SNPs.vcf.gz --remove-indv grch38 --out chr$c.confident.SNPs.noRef --recode --keep-INFO-all | bgzip chr$c.confident.SNPs.noRef.recode.vcf | tabix -p vcf chr$c.confident.SNPs.noRef.recode.vcf.gz; done
+```
+#### 6. PCA for entire chromosome
 ```
 for ass in chm13 hg38; do for c in $(seq 1 22); do
-vt decompose hprc-pggb.$met.chr$c.norm.vcf.gz > hprc-pggb.$met.chr$c.deco.vcf | bgzip hprc-pggb.$met.chr$c.deco.vcf | tabix -p vcf hprc-pggb.$met.chr$c.deco.vcf.gz ;
-done; done
+plink2 --vcf chr$c.confident.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --maf 0.01 --freq --out chr$c.confident.SNPs | plink2 --vcf chr$c.confident.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --make-bed --read-freq chr$c.confident.SNPs.afreq --pca --out chr$c.confident.SNPs ; done
+```
+#### 7. Extract variants on p arm
+```
+for c in $(seq 1 22); do
+bcftools view -R chr$c.chm13.pArm_coord.txt -O z -o chr$c.confident.SNPs.pArm.vcf.gz chr$c.confident.SNPs.noRef.recode.vcf.gz | tabix -p vcf chr$c.confident.SNPs.pArm.vcf.gz; done
+```
+#### 8. Extract variants on q arm
+```
+for ass in chm13 hg38; do for c in $(seq 1 22); do
+bcftools view -R chr$c.chm13.qArm_coord.txt -O z -o chr$c.confident.SNPs.qArm.vcf.gz chr$c.confident.SNPs.noRef.recode.vcf.gz | tabix -p vcf chr$c.confident.SNPs.qArm.vcf.gz; done
+```
+#### 9. PCA using variants on p and q arms
 
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-vt decompose hprc-mc.$met.chr$c.norm.vcf.gz > hprc-mc.$met.chr$c.deco.vcf | bgzip hprc-mc.$met.chr$c.deco.vcf | tabix -p vcf hprc-mc.$met.chr$c.deco.vcf.gz ;
-done; done
-```
-
-#### 5. Extract SNPs only
-```
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -i 'STRLEN(REF)<=2 & STRLEN(ALT)<=2' -O z -o hprc-pggb.$met.chr$c.SNPs.vcf.gz hprc-pggb.$met.chr$c.deco.vcf.gz | tabix -p vcf hprc-pggb.$met.chr$c.SNPs.vcf.gz ;
-done;done
-
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -i 'STRLEN(REF)<=2 & STRLEN(ALT)<=2' -O z -o hprc-mc.$met.chr$c.SNPs.vcf.gz hprc-mc.$met.chr$c.deco.vcf.gz |tabix -p vcf hprc-mc.$met.chr$c.SNPs.vcf.gz;
-done;done
-```
-#### 6. Remove reference from samples
-```
-for met in pggb mc; do for c in $(seq 1 22); do
-vcftools --gzvcf hprc-$met.chm13.chr$c.SNPs.vcf.gz --remove-indv grch38 --out hprc-$met.chm13.chr$c.SNPs.noRef --recode --keep-INFO-all | bgzip hprc-$met.chm13.chr$c.SNPs.noRef.recode.vcf | tabix -p vcf hprc-$met.chm13.chr$c.SNPs.noRef.recode.vcf.gz; 
-done;done
-
-for met in pggb mc; do for c in $(seq 1 22); do
-vcftools --gzvcf hprc-$met.grch38.chr$c.SNPs.vcf.gz --remove-indv chm13 --out hprc-$met.grch38.chr$c.SNPs.noRef --recode --keep-INFO-all | bgzip hprc-$met.grch38.chr$c.SNPs.noRef.recode.vcf | tabix -p vcf hprc-$met.grch38.chr$c.SNPs.noRef.recode.vcf.gz ;
-done;done
-```
-#### 7. PCA for entire chromosome
-```
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-plink2 --vcf hprc-pggb.$ass.chr$c.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --maf 0.01 --freq --out hprc-pggb.$ass.chr$c.SNPs | plink2 --vcf hprc-pggb.$ass.chr$c.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --make-bed --read-freq hprc-pggb.$ass.chr$c.SNPs.afreq --pca --out hprc-pggb.$ass.chr$c.SNPs ;
-done; done
-
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-plink2 --vcf hprc-mc.$ass.chr$c.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --maf 0.01 --freq --out hprc-mc.$ass.chr$c.SNPs | plink2 --vcf hprc-mc.$ass.chr$c.SNPs.noRef.recode.vcf.gz --double-id --set-all-var-ids @:#$r:$a --rm-dup exclude-mismatch --vcf-half-call m --make-bed --read-freq hprc-mc.$ass.chr$c.SNPs.afreq --pca --out hprc-mc.$ass.chr$c.SNPs ;
-done; done
-```
-#### 8. Extract variants on p arm
-```
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -R chr$c.$ass.pArm_coord.txt -O z -o hprc-pggb.$ass.chr$c.SNPs.pArm.vcf.gz hprc-pggb.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-pggb.$ass.chr$c.SNPs.pArm.vcf.gz;
-done; done
-
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -R chr$c.$ass.pArm_coord.txt -O z -o hprc-mc.$ass.chr$c.SNPs.pArm.vcf.gz hprc-mc.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-mc.$ass.chr$c.SNPs.pArm.vcf.gz;
-done; done
-```
-#### 9. Extract variants on q arm
-```
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -R chr$c.$ass.qArm_coord.txt -O z -o hprc-pggb.$ass.chr$c.SNPs.qArm.vcf.gz hprc-pggb.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-pggb.$ass.chr$c.SNPs.qArm.vcf.gz;
-done; done
-
-for ass in chm13 hg38; do for c in $(seq 1 22); do
-bcftools view -R chr$c.$ass.qArm_coord.txt -O z -o hprc-mc.$ass.chr$c.SNPs.qArm.vcf.gz hprc-mc.$ass.chr$c.SNPs.noRef.recode.vcf.gz | tabix -p vcf hprc-mc.$ass.chr$c.SNPs.qArm.vcf.gz;
-done; done
-```
-#### 10. PCA using variants on p and q arms
-
-#### 11. Cluster analysis
+#### 10. Cluster analysis
 ```
 Rscript scr/clusterAnalysis.R pathToImputFiles length assembly method pathToOutputFile
 Rscript scr/plotClustersHprc.R pathToImputFiles pathToPlot
 ```
 
-#### 12. PCA plot
+#### 11. PCA plot
 ```
 ## put together eigenvec files
 python3 scr/appendEigenvec.py -i "pathToImputFiles" -met method -ass assembly -len lehgth -o pathToOutputFile
